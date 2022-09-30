@@ -42,7 +42,7 @@ if __name__ == "__main__":
     e = emissions(yr)
 
     plt.plot(yr, e)
-    plt.xlabel('Time (yr')
+    plt.xlabel('Time (years')
     plt.ylabel('CO_2 emissions (GtC/yr)')
     plt.title('Modified IPPC scenario A2')
 

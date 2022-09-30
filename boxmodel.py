@@ -74,9 +74,8 @@ def ratecoeff(F,M):
     return F/M
 
 def boxODE(b):
-    # how to turn constructing the ode into one function?
+    # how to turn constructing the ode into one function
     return b
 
 if __name__ == "__main__":
     M = [M1, M2, M3, M4, M5, M6, M7, M8, M9]
-    
