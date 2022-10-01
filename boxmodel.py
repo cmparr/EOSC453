@@ -83,14 +83,62 @@ def ratecoeff(F,M):
         rate coefficient (k)
 
     """
-    return F/M
+    return np.divide(F,M)
 
-def boxODE(b):
-    # how to turn constructing the ode into one function
-    return b
+# def boxODE(b):
+#     # how to turn constructing the ode into one function
+#     return b
 
 if __name__ == "__main__":
-    M_init = [M1, M2, M3, M4, M5, M6, M7, M8, M9]
+    # intial mass vector
+    M = [M1, M2, M3, M4, M5, M6, M7, M8, M9]
+
+    # initial time
+    t0 = 0
+
+    # max integration time
+    tmax = 1000
+
+    # time step
+    dt = 1 # yearly?
+
+    # initial y
+    dMdt = dM1 # TODO put this in a loop to go over all dM/dt eq.
+    y0 = np.sum(dMdt)
+
+    # mass of current box 
+    M_step = M1 # TODO initiate mass in loop M[n]
+
+    #initialize
+    steps = int(np.round(tmax/dt))
+    y = np.empty((steps+1,))
+    t = np.empty((steps+1,))
+    y[0] = y0 # starts at 0
+    t[0] = t0
+    
+    #march forward in time
+    for step in range(steps):
+        # initialize vector to store info for each flux in dM/dt
+        ks = np.zeros(len(dMdt))
+        Ms = np.zeros(len(dMdt))
+
+        for n in range(len(dMdt)):
+            F_step = dMdt[n] # current flux
+            k_step = ratecoeff(F_step, M_step) # calculate rate coefficient using previous F and M values
+
+            ks[n] = k_step
+            Ms[n] = M_step
+
+        dMdt = sci.odeint(linflux, y[-1], t, args=(ks, Ms))
+        y[step+1] = np.sum(dMdt)
+        t[step+1] = t[step] + dt  
+
+    plt.plot(t,y)
+    plt.xlabel('time')
+    plt.ylabel('dM/dt')
+
+    plt.show()
+        
 
 
 
