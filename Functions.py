@@ -1,7 +1,9 @@
 import numpy as np
+from Initialize import *
+print(F21)
 
 ## Defining functions, 
-def emissions(yr):
+def emissions(yr, e_stop = True):
     """Function defining A2 emission scenario over the interval 1990-2100
     extended to pre-industrial (assuming linear increase from 0 in 1850 to
     1900) and assuming full cessation of CO_2 input at 2101
@@ -20,71 +22,64 @@ def emissions(yr):
     """
 
     t_yr = np.array([0, 1850, 1990, 2000, 2010, 2020, 2030, 2040, 2050, 2060, 2070, 2080, 2090, 2100, 2110, 2120, 10000])
-    # changed last 3 variables in vector to the 2000 year emission value (previously all 0)
-    e_GtC_yr = np.array([0, 0,  6.875, 8.125, 9.375, 12.5, 14.375, 16.25, 17.5, 19.75, 21.25, 23.125, 26.25, 28.75, 8.125, 8.125, 8.125])
+    e_GtC_yr = np.array([0, 0,  6.875, 8.125, 9.375, 12.5, 14.375, 16.25, 17.5, 19.75, 21.25, 23.125, 26.25, 28.75, 0, 0, 0])
+
+    if e_stop == False:
+        # changed last 3 variables in vector to the 2000 year emission value (previously all 0)
+        e_GtC_yr = np.array([0, 0,  6.875, 8.125, 9.375, 12.5, 14.375, 16.25, 17.5, 19.75, 21.25, 23.125, 26.25, 28.75, 8.125, 8.125, 8.125])
 
     e = np.interp(yr, t_yr, e_GtC_yr)
 
     return e
 
+def Find_k(F_in, F_out, M):
+    """
+    Finds values of linear flux constants, k, for fluxes in and out for a given set of fluxes in, out and inital masses. 
+    ## Inputs ##
+    F_in: NxM array
+        Array with flux-in values
+    F_out: NxM array
+        Array with flux-out values, positive flux values
+    M: M length vector
+        Initial values of mass for each box
+    ## Outputs ##
+    k: NxM array
+        Array of k constant values to solve M-box model. k*M gives M ODEs to solve M box model problem
+    """
+    k_in = F_in.T/M
+    k_out = sum(F_out/M)
+    k = k_in.T - k_out*np.diag(np.ones(len(F_in)))
+    return k
+
 def MassFlux_forced(t, M):
     """
     Mass flux coupled ODEs for 4-box model of carbon cycle in a steady state
     """
-    # add emissions to box 1 
-    M[0] += emissions(t)
-    ## Flux in and Flux out values, units Gt/yr
-    Flux_in = np.array([[0, F21, F51, F71], \
-                    [F12, 0, F52, F72], \
-                    [F15, F25, 0, F75],\
-                    [F17, F27, F57, 0]])
-    Flux_out = np.array([[0, F12, F15, F17], \
-                    [F21, 0, F25, F27], \
-                    [F51, F52, 0, F57],\
-                    [F71, F72, F75, 0]])
-    Mass_Flux_total = sum(Flux_in - Flux_out)
-
-    ## find K values for intial Steady State fluxes given
-    k_in = Flux_in.T/M
-    k_out = sum(Flux_out/M)
-    k = k_in.T - k_out*np.diag(np.ones(4))
+    ## Flux in and Flux out values, units Gt/yr, to find k values
+    if len(M) == 4:
+        k = Find_k(Flux_in_4, Flux_out_4, M0_4)
+    else:
+        k = Find_k(Flux_in_9, Flux_out_9, M0_9)
 
     ## Matrix multiplication to create linear system of equations
     dMdt = np.matmul(k, M) # this result is the steady state solution
+    dMdt[0] += emissions(t) ## adding forcing from emissions function at each timestep
     return dMdt
 
 def MassFlux_Steady(t, M):
     """
-    Mass flux coupled ODEs for 4-box model of carbon cycle in a steady state
+    Unforced coupled ODEs for 4-box model of carbon cycle. 
     """
-    ## Flux in and Flux out values, units Gt/yr
-    Flux_in = np.array([[0, F21, F51, F71], \
-                    [F12, 0, F52, F72], \
-                    [F15, F25, 0, F75],\
-                    [F17, F27, F57, 0]])
-    Flux_out = np.array([[0, F12, F15, F17], \
-                    [F21, 0, F25, F27], \
-                    [F51, F52, 0, F57],\
-                    [F71, F72, F75, 0]])
-    Mass_Flux_total = sum(Flux_in - Flux_out)
-
-    ## find K values for intial Steady State fluxes given
-    k_in = Flux_in.T/M
-    k_out = sum(Flux_out/M)
-    k = k_in.T - k_out*np.diag(np.ones(4))
+    global k_4, k_9
+    ## Flux in and Flux out values, units Gt/yr, to find k values
+    if len(M) == 4:
+        k = Find_k(Flux_in_4, Flux_out_4, M0_4)
+    else:
+        k = Find_k(Flux_in_9, Flux_out_9, M0_9)
 
     ## Matrix multiplication to create linear system of equations
     dMdt = np.matmul(k, M) # this result is the steady state solution
     return dMdt
-
-
-def FindK(F ,t):
-    """
-    Function to integrate given fluxes with time to see if system is in steady state. It is already, makes sense no feed back to M in equations 
-    (can't be done without k anyway))
-    """
-    dMdt = F 
-    return dMdt 
 
 def rk4(fxy, x0, xf, y0, N):
     ####### From Mark (or luke? Not my work as you can tell) #######
