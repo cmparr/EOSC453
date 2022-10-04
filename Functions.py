@@ -66,7 +66,7 @@ def MassFlux_forced(t, M):
     dMdt[0] += emissions(t) ## adding forcing from emissions function at each timestep
     return dMdt
 
-def MassFlux_Steady(t, M):
+def MassFlux_steady(t, M):
     """
     Unforced coupled ODEs for 4-box model of carbon cycle. 
     """
