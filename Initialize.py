@@ -26,8 +26,8 @@ if sum(Mass_Flux_total_4) == 0:
 
 ## 9 BOX MODEL
 # initial masses
-M0_9 = np.array([725, 725, 3, 37675, 110, 450, 60, 1350, 160])
-# M0_9 = np.array([725, 725, 3, 37+625, 110, 450, 60, 1350, 160]) # TODO why is M4 37+625?
+M0_9 = np.array([725, 725, 3, 37+675, 110, 450, 60, 1350, 160])
+# M0_9 = np.array([725, 725, 3, 37+625, 110, 450, 60, 1350, 160]) # TODO why is M4 37+625? Because the deep ocean box is a sum of deep water carbon (37 Gt) and intermediate water carbon (625 Gt)
 # fluxes between boxes
 F21 = 90
 F51= 55

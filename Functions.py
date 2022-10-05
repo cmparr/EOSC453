@@ -31,7 +31,7 @@ def emissions(yr, e_stop = True):
 
     return e
 
-def Find_k(F_in, F_out, M):
+def Find_k(F_in, M):
     """Finds values of linear flux constants, k, for fluxes in and out for a given set of fluxes in, out and inital masses. 
 
     Parameters
@@ -48,13 +48,13 @@ def Find_k(F_in, F_out, M):
     k: NxM array
         Array of k constant values to solve M-box model. k*M gives M ODEs to solve M box model problem
     """
-    k_in = F_in.T/M
-    k_out = sum(F_out/M)
-    k = k_in.T - k_out*np.diag(np.ones(len(F_in)))
+    k_in = F_in/M
+    k_out = sum(k_in) # column-wise sum of k values 
+    k = k_in - k_out*np.diag(np.ones(len(F_in)))
     return k
 
-def MassFlux_forced(t, M):
-    """Mass flux coupled ODEs for 4-box model of carbon cycle in a steady state # TODO is this right
+def MassFlux(t, M, a, b):
+    """Mass flux coupled ODEs for 4-box or 9-box model of carbon cycle in a steady state forced by anthropogenic CO2 emissions
 
     Parameters
     ----------
@@ -62,24 +62,40 @@ def MassFlux_forced(t, M):
         Timespan to use for emissions
     M: M-length array
         Initial values of mass for each box
-
+    a: int 
+        The forcing scenario to use, int value corresponds to forcing:
+            0: No forcings, steady state
+            1: IPCC A2 Emissions forcings
+            2: IPCC A2 modified so 2000 emissions beyond 2110
+            3: some fun periodic forcing
+            4: damped sinusoid
     Returns
     -------
-    dMdt: TODO
-        Flux equation to integrate over
+    dMdt: M-length array
+        Mass flux for one timestep
     """
+    global Flux_in_4, Flux_in_9
+
     ## Flux in and Flux out values, units Gt/yr, to find k values
     if len(M) == 4:
-        k = Find_k(Flux_in_4, Flux_out_4, M0_4)
+        k = Find_k(Flux_in_4, M0_4)
     else:
-        k = Find_k(Flux_in_9, Flux_out_9, M0_9)
+        k = Find_k(Flux_in_9, M0_9)
+    # Forcings are adding mass to Carbon box in position 0 of the mass vector, 
+    if a==1:
+        M[0] += emissions(t) ## adding forcing from emissions function at each timestep
+        ## Matrix multiplication to create linear system of equations  
+    elif a==2:
+        M[0] += emissions(t, e_stop = False) ## adding forcing from emissions function at each timestep
+        ## Matrix multiplication to create linear system of equations
+    elif a==3:
+        M[0] += np.sin(t)
+    elif a==4:
+        M[0] += np.sin(t)*np.exp(-t)
 
-    ## Matrix multiplication to create linear system of equations
-    dMdt = np.matmul(k, M) # this result is the steady state solution
-    dMdt[0] += emissions(t) ## adding forcing from emissions function at each timestep
+    # The actual matrix multiplication
+    dMdt = np.matmul(k, M)
     return dMdt
-
-def MassFlux_steady(t, M):
     """Unforced coupled ODEs for 4-box model of carbon cycle. #TODO?
     Parameters
     ----------
@@ -93,12 +109,12 @@ def MassFlux_steady(t, M):
     dMdt: TODO
         Flux equation to integrate over
     """
-    global k_4, k_9
+    global Flux_in_4, Flux_in_9
     ## Flux in and Flux out values, units Gt/yr, to find k values
     if len(M) == 4:
-        k = Find_k(Flux_in_4, Flux_out_4, M0_4)
+        k = Find_k(Flux_in_4, M0_4)
     else:
-        k = Find_k(Flux_in_9, Flux_out_9, M0_9)
+        k = Find_k(Flux_in_9, M0_9)
 
     ## Matrix multiplication to create linear system of equations
     dMdt = np.matmul(k, M) # this result is the steady state solution
@@ -127,19 +143,6 @@ def rk4(fxy, x0, xf, y0, N):
         The estimated dependent variable at each value of the independent variable
         
     """
-    ####### From Mark (or luke? Not my work as you can tell) #######
-    # The inputs to the function are:
-    #         fxy = the name of the function containing f(x,y) (e.g. oneode, twoode)
-    #         xo,xf = initial and final values of the independent variable (integers or floats)
-    #         yo = initial value of dependent variable at xo (numpy array)
-    #         N = number of intervals to use between xo and xf (integer)
-
-    # The outputs to the function are:
-    #         X = numpy array containing values of the independent variable
-    #         Y = the estimated dependent variable at each value of the independent variable
-    #         --> this variable is a 1D numpy array if only one equation is solved
-    #         --> it is an M-D numpy array [y1(x) y2(x) ... ] for multiple (M) equations 
-
     #compute step size and size of output variables
     if N < 2:
         N = 2 #set minimum number for N
