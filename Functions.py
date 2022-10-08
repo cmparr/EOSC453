@@ -1,6 +1,6 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from Initialize import *
-# print(F21)
 
 ## Defining functions, 
 def emissions(yr, e_stop = True):
@@ -32,7 +32,8 @@ def emissions(yr, e_stop = True):
     return e
 
 def Find_k(F_in, M):
-    """Finds values of linear flux constants, k, for fluxes in and out for a given set of fluxes in, out and inital masses. 
+    """Finds values of linear flux constants, k, for fluxes in and out for a 
+    given set of fluxes in, out and inital masses. 
 
     Parameters
     ----------
@@ -46,7 +47,8 @@ def Find_k(F_in, M):
     Returns
     -------
     k: NxM array
-        Array of k constant values to solve M-box model. k*M gives M ODEs to solve M box model problem
+        Array of k constant values to solve M-box model. k*M gives M ODEs to 
+        solve M box model problem
     """
     k_in = F_in/M
     k_out = sum(k_in) # column-wise sum of k values 
@@ -54,7 +56,8 @@ def Find_k(F_in, M):
     return k
 
 def MassFlux(t, M, a, b):
-    """Mass flux coupled ODEs for 4-box or 9-box model of carbon cycle in a steady state forced by anthropogenic CO2 emissions
+    """Mass flux coupled ODEs for 4-box or 9-box model of carbon cycle in a 
+    steady state forced by anthropogenic CO2 emissions
 
     Parameters
     ----------
@@ -74,13 +77,18 @@ def MassFlux(t, M, a, b):
     dMdt: M-length array
         Mass flux for one timestep
     """
-    global Flux_in_4, Flux_in_9
+    # global Flux_in_4, Flux_in_9
+    period = 100 #in years
 
     ## Flux in and Flux out values, units Gt/yr, to find k values
     if len(M) == 4:
         k = Find_k(Flux_in_4, M0_4)
     else:
         k = Find_k(Flux_in_9, M0_9)
+
+    # The actual matrix multiplication
+    dMdt = np.matmul(k, M)
+
     # Forcings are adding mass to Carbon box in position 0 of the mass vector, 
     if a==1:
         M[0] += emissions(t) ## adding forcing from emissions function at each timestep
@@ -89,36 +97,34 @@ def MassFlux(t, M, a, b):
         M[0] += emissions(t, e_stop = False) ## adding forcing from emissions function at each timestep
         ## Matrix multiplication to create linear system of equations
     elif a==3:
-        M[0] += np.sin(t)
+        M[0] += np.sin(((2*np.pi)/period)*t)
     elif a==4:
-        M[0] += np.sin(t)*np.exp(-t)
+        M[0] += np.exp((2*np.pi)*period*t)
 
-    # The actual matrix multiplication
-    dMdt = np.matmul(k, M)
     return dMdt
-    """Unforced coupled ODEs for 4-box model of carbon cycle. #TODO?
-    Parameters
-    ----------
-    t: t-length array
-        Timespan to use for emissions
-    M: M-length array
-        Initial values of mass for each box
+    # """Unforced coupled ODEs for 4-box model of carbon cycle. #TODO?
+    # Parameters
+    # ----------
+    # t: t-length array
+    #     Timespan to use for emissions
+    # M: M-length array
+    #     Initial values of mass for each box
 
-    Returns
-    -------
-    dMdt: TODO
-        Flux equation to integrate over
-    """
-    global Flux_in_4, Flux_in_9
-    ## Flux in and Flux out values, units Gt/yr, to find k values
-    if len(M) == 4:
-        k = Find_k(Flux_in_4, M0_4)
-    else:
-        k = Find_k(Flux_in_9, M0_9)
+    # Returns
+    # -------
+    # dMdt: TODO
+    #     Flux equation to integrate over
+    # """
+    # global Flux_in_4, Flux_in_9
+    # ## Flux in and Flux out values, units Gt/yr, to find k values
+    # if len(M) == 4:
+    #     k = Find_k(Flux_in_4, M0_4)
+    # else:
+    #     k = Find_k(Flux_in_9, M0_9)
 
-    ## Matrix multiplication to create linear system of equations
-    dMdt = np.matmul(k, M) # this result is the steady state solution
-    return dMdt
+    # ## Matrix multiplication to create linear system of equations
+    # dMdt = np.matmul(k, M) # this result is the steady state solution
+    # return dMdt
 
 def rk4(fxy, x0, xf, y0, N):
     """Runge-Kutta integration to solve odes to the 4th order
@@ -139,7 +145,8 @@ def rk4(fxy, x0, xf, y0, N):
     -------
     X: numpy array
         Numpy array containing values of the independent variable
-    Y: 1D numpy array if one equation solved; M-D numpy array [y1(x) y2(x) ... ] for multiple (M) equations
+    Y: 1D numpy array if one equation solved; M-D numpy array [y1(x) y2(x) ... ] 
+            for multiple (M) equations
         The estimated dependent variable at each value of the independent variable
         
     """
