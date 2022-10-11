@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from Initialize import *
 
 ## Defining functions, 
-def emissions(yr, e_stop = True):
+def emissions(yr, e_stop = True, opt = 0):
     """Function defining A2 emission scenario over the interval 1990-2100
     extended to pre-industrial (assuming linear increase from 0 in 1850 to
     1900) and assuming full cessation of CO_2 input at 2101
@@ -26,6 +26,13 @@ def emissions(yr, e_stop = True):
     if e_stop == False:
         # changed last 3 variables in vector to the 2000 year emission value (previously all 0)
         e_GtC_yr = np.array([0, 0,  6.875, 8.125, 9.375, 12.5, 14.375, 16.25, 17.5, 19.75, 21.25, 23.125, 26.25, 28.75, 8.125, 8.125, 8.125])
+
+    period = 70 #in years
+    amp = 10 # amplitude of periodic function
+    if opt == 1: # periodic emissions
+        e_GtC_yr = amp*np.sin(((2*np.pi)/period)*(t_yr - 1850)) + e_GtC_yr
+    elif opt == 2: # periodic decay of emissions
+        e_GtC_yr = amp*np.exp(-((2*np.pi/(10*period))*(t_yr - 2100))) + e_GtC_yr # play around with period multiplication to limit exp. overtaking emissions (10* is all exp, 100* ~same as none)
 
     e = np.interp(yr, t_yr, e_GtC_yr)
 
@@ -77,8 +84,7 @@ def MassFlux(t, M, a, b):
     dMdt: M-length array
         Mass flux for one timestep
     """
-    # global Flux_in_4, Flux_in_9
-    period = 100 #in years
+    global Flux_in_4, Flux_in_9
 
     ## Flux in and Flux out values, units Gt/yr, to find k values
     if len(M) == 4:
@@ -92,17 +98,18 @@ def MassFlux(t, M, a, b):
     # Forcings are adding mass to Carbon box in position 0 of the mass vector, 
     if a==1:
         M[0] += emissions(t) ## adding forcing from emissions function at each timestep
-        ## Matrix multiplication to create linear system of equations  
     elif a==2:
-        M[0] += emissions(t, e_stop = False) ## adding forcing from emissions function at each timestep
-        ## Matrix multiplication to create linear system of equations
+        M[0] += emissions(t, e_stop = False) ## adding forcing from emissions function at each timestep (maintain 2100 levels)
     elif a==3:
-        M[0] += np.sin(((2*np.pi)/period)*t)
+        M[0] += emissions(t, opt = 1) # sine periodic forcing
     elif a==4:
-        M[0] += np.exp((2*np.pi)*period*t)
+        M[0] += emissions(t, opt = 2) # exponential periodic forcing
+    # elif a==5:
+    #     M[0] += np.cos(((2*np.pi)/period)*t)
 
     return dMdt
-    # """Unforced coupled ODEs for 4-box model of carbon cycle. #TODO?
+
+    # """Unforced coupled ODEs for 4-box model of carbon cycle.
     # Parameters
     # ----------
     # t: t-length array

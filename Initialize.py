@@ -27,11 +27,10 @@ if sum(Mass_Flux_total_4) == 0:
 ## 9 BOX MODEL
 # initial masses
 M0_9 = np.array([725, 725, 3, 37+675, 110, 450, 60, 1350, 160])
-# M0_9 = np.array([725, 725, 3, 37+625, 110, 450, 60, 1350, 160]) # TODO why is M4 37+625? Because the deep ocean box is a sum of deep water carbon (37 Gt) and intermediate water carbon (625 Gt)
 # fluxes between boxes
 F21 = 90
 F51= 55
-F61 = 0 #1000 # deforestation
+F61 = 0 # deforestation
 F71 = 50 # detritus decomposition
 F81 = 3
 F91 = 1
@@ -65,5 +64,5 @@ if sum(Mass_Flux_total_9) == 0:
 
 
 # The timespan to integrate over
-t_start = 1500; t_end= 2200; n = 200 # TODO want 1800-2200 time interval
+t_start = 1800; t_end= 2200; n = 200 # want 1800-2200 time interval
 t = np.linspace(t_start, t_end, n) # some time span
